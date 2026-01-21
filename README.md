@@ -2,32 +2,62 @@
 
 [![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-name.streamlit.app)
 
-## Leírás
-Lokális arcfelismerő alkalmazás Python-ban, Streamlit UI-val. 
-Tanulási projekt - Best Practices, OOP, PEP 8 szabványokkal.
+## Description
+Local face recognition application built with Python and Streamlit UI.
+Learning project following Best Practices, OOP principles, and PEP 8 standards.
 
 ## 🌐 Live Demo
-**👉 [Próbáld ki itt!](https://your-app-name.streamlit.app)**
+**👉 [Try it here!](https://your-app-name.streamlit.app)**
 
-## Jellemzők
-- ✅ 100% lokális, GDPR konform
-- ✅ OOP architektúra, Type Hinting
-- ✅ Professzionális logging
-- ✅ Moduláris felépítés
+## Features
+- ✅ 100% local, GDPR compliant
+- ✅ OOP architecture with Type Hinting
+- ✅ Professional logging
+- ✅ Modular structure
 - ✅ Streamlit Cloud deployment ready
 
-## Technológiák
+## Technologies
 - Python 3.11+
 - Streamlit
-- face_recognition (dlib alapú)
+- face_recognition (dlib-based)
 - OpenCV
 - NumPy, Pillow
 
 ---
 
-## 🚀 Streamlit Cloud Deployment
+## ⚡ QUICK INSTALL - FOR WINDOWS USERS
 
-### 1. Fork vagy Clone ez a repo
+**THE EASIEST METHOD:**
+
+### 1️⃣ Double-click this file:
+```
+install_windows.bat
+```
+
+**Done! 🎉** This automatically installs everything (using pre-compiled dlib-bin)
+
+---
+
+### 🛠️ Or Manually (3 commands):
+
+```bash
+pip install dlib-bin
+pip install --no-deps face-recognition
+pip install -r requirements-windows.txt
+```
+
+### ▶️ Run:
+```bash
+streamlit run app.py
+```
+
+**🌐 Browser opens automatically at: `http://localhost:8501`**
+
+---
+
+## 🚀 Streamlit Cloud Deployment (ONLINE)
+
+### 1. Fork or Clone this repo
 ```bash
 git clone https://github.com/YOUR_USERNAME/FaceRecognitionApp.git
 ```
@@ -39,108 +69,103 @@ git commit -m "Initial commit"
 git push origin main
 ```
 
-### 3. Deploy Streamlit Cloud-ra
-1. Menj a [share.streamlit.io](https://share.streamlit.io)
-2. Jelentkezz be GitHub accounttal
-3. Kattints a **"New app"** gombra
-4. Válaszd ki:
+### 3. Deploy to Streamlit Cloud
+1. Go to [share.streamlit.io](https://share.streamlit.io)
+2. Sign in with your GitHub account
+3. Click **"New app"** button
+4. Select:
    - Repository: `YOUR_USERNAME/FaceRecognitionApp`
    - Branch: `main`
    - Main file: `app.py`
-5. Kattints **"Deploy!"**
+5. Click **"Deploy!"**
 
-⏱️ **Az első deployment ~5-10 percet vesz igénybe** (dlib fordítása miatt)
+⏱️ **First deployment takes ~5-10 minutes** (due to dlib compilation)
 
 ---
 
-## 💻 Lokális Telepítés
+## 💻 Local Installation - DETAILED (Mac/Linux or Virtual Environment)
 
-### Windows (Könnyített verzió)
-
-```bash
-# 1. Clone repository
-git clone https://github.com/YOUR_USERNAME/FaceRecognitionApp.git
-cd FaceRecognitionApp
-
-# 2. Telepítsd a dlib-bin-t (előre fordított)
-pip install dlib-bin
-pip install --no-deps face-recognition
-pip install face-recognition-models
-
-# 3. Telepítsd a többi csomagot
-pip install streamlit opencv-python numpy pillow
-
-# 4. Futtasd
-streamlit run app.py
-```
-
-### Linux/Mac vagy Virtual Environment-tel
+### Option A: Virtual Environment (recommended for production)
 
 ```bash
-# 1. Virtual Environment létrehozása
+# 1. Create Virtual Environment
 python3 -m venv venv
 source venv/bin/activate  # Linux/Mac
 # venv\Scripts\activate   # Windows
 
-# 2. Függőségek telepítése
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Futtatás
+# 3. Run
+streamlit run app.py
+```
+
+### Option B: Global installation (quick test)
+
+**Windows:**
+```bash
+pip install -r requirements-windows.txt
+streamlit run app.py
+```
+
+**Mac/Linux:**
+```bash
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
 ---
 
-## 📸 Használat
+## 📸 Usage
 
-### 1. Adatok előkészítése
-Helyezd el a képeket a `data/people/` mappába, személyenként külön almappákban:
+### 1. Prepare your data
+Place images in the `data/people/` folder, with separate subfolders for each person:
 ```
 data/people/
 ├── Person_A/
-│   ├── foto1.jpg
-│   └── foto2.jpg
+│   ├── photo1.jpg
+│   └── photo2.jpg
 └── Person_B/
-    └── foto1.jpg
+    └── photo1.jpg
 ```
 
-### 2. Database építés
-- Az app automatikusan betölti a képeket indításkor
-- Vagy kattints a **"🔄 Rebuild Database"** gombra a sidebaron
+### 2. Build database
+- The app automatically loads images at startup
+- Or click the **"🔄 Rebuild Database"** button in the sidebar
 
-### 3. Arc felismerés
-- Tölts fel egy képet az app-ban
-- Az app megpróbálja felismerni az arcokat
+### 3. Recognize faces
+- Upload an image in the app
+- The app will try to recognize faces
 
 ---
 
-## 📁 Projekt Struktúra
+## 📁 Project Structure
 ```
 FaceRecognitionApp/
 ├── .streamlit/
-│   └── config.toml        # Streamlit konfiguráció
-├── src/                    # Forráskód modulok
-│   ├── data_manager.py    # Arc adatbázis kezelő
-│   ├── face_engine.py     # Arc felismerő engine
-│   └── utils.py           # Segédfüggvények
-├── data/                   # Lokális adattároló
-│   ├── people/            # Személy mappák (gitignore!)
-│   ├── encodings/         # Cache fájlok
-│   └── logs/              # Log fájlok
-├── config.py              # Központi konfiguráció
-├── app.py                 # Alkalmazás belépési pont
-├── requirements.txt       # Python függőségek
-├── packages.txt           # Linux rendszer csomagok (Streamlit Cloud)
-└── .gitignore            # Git kizárások
+│   └── config.toml        # Streamlit configuration
+├── src/                    # Source code modules
+│   ├── data_manager.py    # Face database manager
+│   ├── face_engine.py     # Face recognition engine
+│   └── utils.py           # Utility functions
+├── data/                   # Local data storage
+│   ├── people/            # Person folders (gitignored!)
+│   ├── encodings/         # Cache files
+│   └── logs/              # Log files
+├── config.py              # Central configuration
+├── app.py                 # Application entry point
+├── requirements.txt       # Python dependencies
+├── packages.txt           # Linux system packages (Streamlit Cloud)
+└── .gitignore            # Git exclusions
 ```
 
 ---
 
-## 🛠️ Fejlesztés
+## 🛠️ Development
 
 ### Code Quality
 ```bash
-# Formázás
+# Formatting
 black src/ app.py config.py
 
 # Linting
@@ -157,22 +182,22 @@ pytest tests/
 
 ---
 
-## ⚠️ Fontos megjegyzések
+## ⚠️ Important Notes
 
 ### GDPR & Privacy
-- **A `data/people/` mappa .gitignore-ban van!**
-- Soha ne commitolj személyes arcképeket
-- Csak a saját gépeden tárold az éles képeket
+- **The `data/people/` folder is in .gitignore!**
+- Never commit personal face images
+- Only store production images on your local machine
 
-### Streamlit Cloud Limitációk
-- **Ingyenes tier:** 1 GB RAM, 1 CPU
-- **Timeout:** 10 perc inaktivitás után alvó módba
-- **Nem ajánlott:** Nagy adatbázisokhoz (>100 személy)
+### Streamlit Cloud Limitations
+- **Free tier:** 1 GB RAM, 1 CPU
+- **Timeout:** Goes to sleep after 10 minutes of inactivity
+- **Not recommended:** For large databases (>100 people)
 
 ---
 
-## 📄 Licensz
-MIT License - Tanulási célú projekt
+## 📄 License
+MIT License - Educational project
 
-## 🤝 Kontribúció
-Pull requestek és issue-k szívesen fogadva!
+## 🤝 Contributing
+Pull requests and issues are welcome!

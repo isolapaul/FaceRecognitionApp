@@ -1,0 +1,17 @@
+# Windows-specific requirements (with pre-compiled dlib)
+# Use this file if you're on Windows and want easy installation
+# Run: pip install -r requirements-windows.txt
+
+# Core app dependencies
+streamlit>=1.31.0
+opencv-python>=4.9.0.80
+numpy>=1.24.3,<2.0.0
+Pillow>=10.2.0
+
+# Pre-compiled dlib for Windows (avoids compilation)
+dlib-bin>=20.0.0
+
+# Face recognition WITHOUT auto-installing dlib
+# (we already have dlib-bin above)
+face-recognition-models>=0.3.0
+Click>=6.0
