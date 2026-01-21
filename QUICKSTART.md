@@ -1,34 +1,36 @@
-# 🚀 GYORS INDÍTÁS - 2 PERC
+# 🚀 QUICK START - 2 MINUTES
 
-## Windows Userek (A LEGEGYSZERŰBB):
+## Windows Users (THE EASIEST):
 
-### 1. Dupla klikk:
+### 1. Double-click:
 ```
 install_windows.bat
 ```
 
-### 2. Futtasd:
+### 2. Run:
 ```
-streamlit run app.py
+python -m streamlit run app.py
 ```
 
-**Kész!** 🎉
+**Done!** 🎉
 
 ---
 
-## Ha a batch file nem működik:
+## If the batch file doesn't work:
 
-### Terminálban (3 parancs):
+### In Terminal (3 commands):
 ```bash
-pip install dlib-bin
-pip install --no-deps face-recognition
-pip install streamlit opencv-python numpy pillow face-recognition-models
+python -m pip install dlib-bin
+python -m pip install --no-deps face-recognition
+python -m pip install streamlit opencv-python numpy pillow face-recognition-models
 ```
 
-### Futtasd:
+### Run:
 ```bash
-streamlit run app.py
+python -m streamlit run app.py
 ```
+
+**Note:** If `streamlit` command doesn't work, always use `python -m streamlit`
 
 ---
 
@@ -41,46 +43,46 @@ streamlit run app.py
 
 ---
 
-## 📸 Tesztelés:
+## 📸 Testing:
 
-1. **Add hozzá képeket:**
-   - Menj a `data/people/` mappába
-   - Hozz létre egy mappát, pl: `data/people/Te/`
-   - Tegyél bele 2-3 képet magadról (jpg/png)
+1. **Add images:**
+   - Go to `data/people/` folder
+   - Create a folder, e.g.: `data/people/John/`
+   - Put 2-3 photos of yourself (jpg/png)
 
-2. **Indítsd újra az appot**
-   - Ctrl+C a terminálban
-   - `streamlit run app.py`
+2. **Restart the app**
+   - Ctrl+C in terminal
+   - `python -m streamlit run app.py`
 
-3. **Próbáld ki:**
-   - Tölts fel egy képet magadról
-   - Az app megpróbálja felismerni!
+3. **Try it:**
+   - Upload a photo of yourself
+   - The app will try to recognize you!
 
 ---
 
-## ❓ Problémák?
+## ❓ Troubleshooting
 
-### "dlib error" Windows-on:
+### "dlib error" on Windows:
 ```bash
-pip uninstall dlib
-pip install dlib-bin
+python -m pip uninstall dlib
+python -m pip install dlib-bin
 ```
 
 ### "Module not found":
 ```bash
-pip install -r requirements-windows.txt --upgrade
+python -m pip install -r requirements-windows.txt --upgrade
 ```
 
-### "Port már használatban":
+### "Port already in use":
 ```bash
-streamlit run app.py --server.port 8502
+python -m streamlit run app.py --server.port 8502
 ```
 
 ---
 
-## 🌐 Online verzió:
+## 🌐 Online Version:
 
-**Nem akarsz telepíteni?**  
-Próbáld ki online: [https://your-app-name.streamlit.app](https://your-app-name.streamlit.app)
+**Don't want to install locally?**  
+Try it online: [https://your-app-name.streamlit.app](https://your-app-name.streamlit.app)
 
-*Az online verzió üres adatbázissal indul (GDPR miatt nincs előre feltöltve kép).*
+*The online version starts with an empty database (no pre-loaded images for GDPR compliance).*

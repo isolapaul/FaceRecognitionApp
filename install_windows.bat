@@ -17,16 +17,16 @@ python --version
 
 echo.
 echo [2/5] Installing dlib-bin (pre-compiled)...
-pip install dlib-bin
+python -m pip install dlib-bin
 
 echo.
 echo [3/5] Installing face-recognition (without dependencies)...
-pip install --no-deps face-recognition
-pip install face-recognition-models
+python -m pip install --no-deps face-recognition
+python -m pip install face-recognition-models
 
 echo.
 echo [4/5] Installing other dependencies...
-pip install streamlit opencv-python numpy pillow
+python -m pip install streamlit opencv-python numpy pillow
 
 echo.
 echo [5/5] Setup complete!
@@ -37,5 +37,8 @@ echo ========================================
 echo.
 echo To run the app:
 echo   streamlit run app.py
+echo.
+echo Or if streamlit not in PATH:
+echo   python -m streamlit run app.py
 echo.
 pause
