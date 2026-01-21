@@ -80,9 +80,4 @@ python -m streamlit run app.py --server.port 8502
 
 ---
 
-## 🌐 Online Version:
-
-**Don't want to install locally?**  
-Try it online: [https://your-app-name.streamlit.app](https://your-app-name.streamlit.app)
-
-*The online version starts with an empty database (no pre-loaded images for GDPR compliance).*
+**That's it! Happy face recognizing! 🎭**

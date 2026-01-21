@@ -1,20 +1,14 @@
 # 🎭 Face Recognition App
 
-[![Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-name.streamlit.app)
-
 ## Description
 Local face recognition application built with Python and Streamlit UI.
 Learning project following Best Practices, OOP principles, and PEP 8 standards.
-
-## 🌐 Live Demo
-**👉 [Try it here!](https://your-app-name.streamlit.app)**
 
 ## Features
 - ✅ 100% local, GDPR compliant
 - ✅ OOP architecture with Type Hinting
 - ✅ Professional logging
 - ✅ Modular structure
-- ✅ Streamlit Cloud deployment ready
 
 ## Technologies
 - Python 3.11+
@@ -55,35 +49,7 @@ streamlit run app.py
 
 ---
 
-## 🚀 Streamlit Cloud Deployment (ONLINE)
-
-### 1. Fork or Clone this repo
-```bash
-git clone https://github.com/YOUR_USERNAME/FaceRecognitionApp.git
-```
-
-### 2. Push to GitHub
-```bash
-git add .
-git commit -m "Initial commit"
-git push origin main
-```
-
-### 3. Deploy to Streamlit Cloud
-1. Go to [share.streamlit.io](https://share.streamlit.io)
-2. Sign in with your GitHub account
-3. Click **"New app"** button
-4. Select:
-   - Repository: `YOUR_USERNAME/FaceRecognitionApp`
-   - Branch: `main`
-   - Main file: `app.py`
-5. Click **"Deploy!"**
-
-⏱️ **First deployment takes ~5-10 minutes** (due to dlib compilation)
-
----
-
-## 💻 Local Installation - DETAILED (Mac/Linux or Virtual Environment)
+##  Local Installation - DETAILED (Mac/Linux or Virtual Environment)
 
 ### Option A: Virtual Environment (recommended for production)
 
@@ -187,12 +153,7 @@ pytest tests/
 ### GDPR & Privacy
 - **The `data/people/` folder is in .gitignore!**
 - Never commit personal face images
-- Only store production images on your local machine
-
-### Streamlit Cloud Limitations
-- **Free tier:** 1 GB RAM, 1 CPU
-- **Timeout:** Goes to sleep after 10 minutes of inactivity
-- **Not recommended:** For large databases (>100 people)
+- Only store images on your local machine
 
 ---
 
