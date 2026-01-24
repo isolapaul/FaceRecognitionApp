@@ -37,6 +37,12 @@ data/people/*/
 data/encodings/*.pkl
 data/encodings/*.pickle
 
+# Multi-user data - CRITICAL: Never commit user data!
+data/users/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
 # Documentation (sensitive learning materials)
 DOCUMENTATION.txt
 
@@ -48,3 +54,5 @@ logs/
 .env
 .env.local
 
+# Test files
+test_*.py

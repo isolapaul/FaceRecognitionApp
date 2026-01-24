@@ -2,14 +2,20 @@
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import streamlit as st
 from PIL import Image
 
 import config
-from src.data_manager import FaceDataManager
-from src.face_engine import FaceRecognizer
 from src.utils import setup_logging, fix_image_orientation, draw_face_annotations
+from src.database import DatabaseManager
+from src.auth import AuthManager
+
+# Lazy imports to avoid loading face_recognition before it's needed
+if TYPE_CHECKING:
+    from src.data_manager import FaceDataManager
+    from src.face_engine import FaceRecognizer
 
 
 st.set_page_config(
@@ -31,6 +37,15 @@ logger = get_logger()
 
 def initialize_session_state() -> None:
     """Initialize session state variables."""
+    # Authentication
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if "user" not in st.session_state:
+        st.session_state.user = None
+    if "show_register" not in st.session_state:
+        st.session_state.show_register = False
+    
+    # Face recognition
     if "awaiting_confirmation" not in st.session_state:
         st.session_state.awaiting_confirmation = False
     if "recognized_faces" not in st.session_state:
@@ -42,64 +57,193 @@ def initialize_session_state() -> None:
 
 
 @st.cache_resource
-def initialize_face_recognition() -> tuple[FaceDataManager, FaceRecognizer]:
-    """Initialize face recognition components."""
-    logger.info("Initializing face recognition components...")
+def initialize_face_recognition(user_id: int) -> tuple:
+    """Initialize face recognition components for specific user."""
+    # Import here to avoid loading face_recognition before login
+    from src.data_manager import FaceDataManager
+    from src.face_engine import FaceRecognizer
     
-    data_manager = FaceDataManager(logger=logger)
+    logger.info("Initializing face recognition components for user_id: %d...", user_id)
+    
+    data_manager = FaceDataManager(user_id=user_id, logger=logger)
     faces_count = data_manager.build_database_from_images()
     
     if faces_count == 0:
-        logger.warning("WARNING: Database is empty!")
+        logger.warning("WARNING: Database is empty for user_id: %d!", user_id)
     else:
-        logger.info("Database loaded: %d faces", faces_count)
+        logger.info("Database loaded: %d faces for user_id: %d", faces_count, user_id)
     
     recognizer = FaceRecognizer(data_manager=data_manager, logger=logger)
     return data_manager, recognizer
 
 
-def render_sidebar(data_manager: FaceDataManager) -> None:
+@st.cache_resource
+def get_db_manager() -> DatabaseManager:
+    """Get database manager instance."""
+    db = DatabaseManager()
+    db.initialize_database()
+    return db
+
+
+@st.cache_resource
+def get_auth_manager() -> AuthManager:
+    """Get authentication manager instance."""
+    return AuthManager(get_db_manager())
+
+
+def render_login_page(auth_manager: AuthManager) -> None:
+    """Render login/register page."""
+    st.title("🎭 Face Recognition App")
+    st.markdown("---")
+    
+    # Toggle between login and register
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        if st.session_state.show_register:
+            st.subheader("📝 Regisztráció")
+            
+            with st.form("register_form"):
+                username = st.text_input("Felhasználónév", max_chars=50)
+                password = st.text_input("Jelszó", type="password", max_chars=128)
+                password_confirm = st.text_input("Jelszó megerősítés", type="password", max_chars=128)
+                
+                col_reg, col_back = st.columns(2)
+                
+                with col_reg:
+                    submit = st.form_submit_button("Regisztráció", type="primary", use_container_width=True)
+                
+                with col_back:
+                    back = st.form_submit_button("Vissza a belépéshez", use_container_width=True)
+                
+                if submit:
+                    if not username or not password:
+                        st.error("❌ Töltsd ki az összes mezőt!")
+                    elif password != password_confirm:
+                        st.error("❌ A jelszavak nem egyeznek!")
+                    else:
+                        success, message = auth_manager.register(username, password)
+                        if success:
+                            st.success(f"✅ {message}")
+                            st.info("Most már beléphetsz az új fiókodba!")
+                            st.session_state.show_register = False
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {message}")
+                
+                if back:
+                    st.session_state.show_register = False
+                    st.rerun()
+        
+        else:
+            st.subheader("🔐 Bejelentkezés")
+            
+            with st.form("login_form"):
+                username = st.text_input("Felhasználónév")
+                password = st.text_input("Jelszó", type="password")
+                
+                col_login, col_register = st.columns(2)
+                
+                with col_login:
+                    submit = st.form_submit_button("Belépés", type="primary", use_container_width=True)
+                
+                with col_register:
+                    register_btn = st.form_submit_button("Regisztráció", use_container_width=True)
+                
+                if submit:
+                    if not username or not password:
+                        st.error("❌ Töltsd ki az összes mezőt!")
+                    else:
+                        success, user, message = auth_manager.login(username, password)
+                        if success and user:
+                            st.session_state.authenticated = True
+                            st.session_state.user = user
+                            st.success(f"✅ {message}")
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {message}")
+                
+                if register_btn:
+                    st.session_state.show_register = True
+                    st.rerun()
+    
+    # Info box
+    st.markdown("---")
+    with st.expander("ℹ️ Információ", expanded=False):
+        st.markdown("""
+        ### Üdvözlünk! 👋
+        
+        Ez egy **arcfelismerő alkalmazás**, ahol:
+        - ✅ Feltölthetsz képeket ismerősökről
+        - ✅ Az app megtanulja felismerni őket
+        - ✅ Később automatikusan megnevezi ki van a képen
+        - ✅ Minden felhasználó saját adatbázist használ
+        
+        **Kezdéshez:**
+        1. Regisztrálj egy új fiókot
+        2. Lépj be
+        3. Töltsd fel az első képeket!
+        """)
+
+
+def render_sidebar(data_manager) -> None:
     """Render sidebar with statistics and settings."""
-    st.sidebar.title("⚙️ Settings")
-    st.sidebar.subheader("📊 Database")
+    # User info and logout
+    if st.session_state.user:
+        st.sidebar.title(f"👤 {st.session_state.user['username']}")
+        
+        if st.sidebar.button("🚪 Kijelentkezés", use_container_width=True):
+            st.session_state.authenticated = False
+            st.session_state.user = None
+            st.session_state.awaiting_confirmation = False
+            st.session_state.recognized_faces = []
+            st.session_state.current_image = None
+            st.session_state.current_filename = None
+            st.cache_resource.clear()  # Clear cached resources
+            st.rerun()
+        
+        st.sidebar.markdown("---")
+    
+    st.sidebar.title("⚙️ Beállítások")
+    st.sidebar.subheader("📊 Adatbázis")
     db_info = data_manager.get_database_info()
     
-    st.sidebar.metric(label="Total faces", value=db_info["total_faces"])
-    st.sidebar.metric(label="Unique persons", value=db_info["unique_persons"])
+    st.sidebar.metric(label="Összes arc", value=db_info["total_faces"])
+    st.sidebar.metric(label="Egyedi személyek", value=db_info["unique_persons"])
     
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🔄 Actions")
+    st.sidebar.subheader("🔄 Műveletek")
     
-    if st.sidebar.button("🔄 Rebuild Database", use_container_width=True):
-        with st.spinner("Rebuilding database..."):
+    if st.sidebar.button("🔄 Adatbázis újraépítése", use_container_width=True):
+        with st.spinner("Adatbázis újraépítése..."):
             data_manager.clear_database()
             faces_count = data_manager.build_database_from_images(force_rebuild=True)
             
             if faces_count > 0:
-                st.sidebar.success(f"✅ {faces_count} faces trained!")
+                st.sidebar.success(f"✅ {faces_count} arc betanítva!")
                 logger.info("Database rebuilt: %d faces", faces_count)
                 st.rerun()
             else:
-                st.sidebar.error("❌ No faces found!")
+                st.sidebar.info("ℹ️ Még nincsenek képek az adatbázisban")
     
-    if st.sidebar.button("🗑️ Clear Cache", use_container_width=True):
-        cache_file = config.ENCODINGS_FILE
+    if st.sidebar.button("🗑️ Cache törlése", use_container_width=True):
+        cache_file = data_manager.encodings_file
         if cache_file.exists():
             cache_file.unlink()
-            st.sidebar.success("✅ Cache cleared!")
+            st.sidebar.success("✅ Cache törölve!")
             logger.info("Cache file deleted")
         else:
-            st.sidebar.info("ℹ️ No cache file found")
+            st.sidebar.info("ℹ️ Nincs cache fájl")
     
     st.sidebar.markdown("---")
     st.sidebar.info(
-        "💡 **Tip**: Place images in `data/people/` folder, "
-        "one subfolder per person!"
+        f"💡 **Tipp**: Képeket a `{data_manager.people_dir}` mappába tedd, "
+        "minden személynek külön almappa!"
     )
 
 
 def save_new_image_and_retrain(
-    data_manager: FaceDataManager,
+    data_manager,
     image: Image.Image,
     recognized_faces: list[tuple[str, tuple[int, int, int, int]]],
     original_filename: str
@@ -125,8 +269,8 @@ def save_new_image_and_retrain(
             if person_name == "Ismeretlen":
                 continue
             
-            # Create person folder if it doesn't exist
-            person_folder = config.PEOPLE_DIR / person_name.replace(" ", "_")
+            # Create person folder if it doesn't exist (use data_manager's people_dir)
+            person_folder = data_manager.people_dir / person_name.replace(" ", "_")
             person_folder.mkdir(parents=True, exist_ok=True)
             
             # Generate unique filename
@@ -151,7 +295,7 @@ def save_new_image_and_retrain(
         return False
 
 
-def render_main_content(recognizer: FaceRecognizer, data_manager: FaceDataManager) -> None:
+def render_main_content(recognizer, data_manager) -> None:
     """Render main content (image upload, recognition)."""
     st.title(config.APP_TITLE)
     st.markdown("---")
@@ -311,45 +455,58 @@ def render_main_content(recognizer: FaceRecognizer, data_manager: FaceDataManage
 
 
 
-def render_empty_database_warning(data_manager: FaceDataManager) -> None:
+def render_empty_database_warning(data_manager) -> None:
     """Show warning if database is empty."""
     db_info = data_manager.get_database_info()
     
     if db_info["total_faces"] == 0:
-        st.error("### ⚠️ Database is empty!")
-        st.markdown("""
-        **Steps to populate the database:**
+        st.info("### ℹ️ Az adatbázis még üres")
+        st.markdown(f"""
+        **Lépések az adatbázis feltöltéséhez:**
         
-        1. Open the project folder: `data/people/`
-        2. Create subfolders for each person (e.g., `John_Doe`)
-        3. Place images in the subfolders (more images = better recognition)
-        4. Click **"🔄 Rebuild Database"** button in the sidebar
+        1. Nyisd meg a projekt mappát: `{data_manager.people_dir}`
+        2. Hozz létre almappákat minden személyhez (pl. `Kovacs_Janos`)
+        3. Tedd a képeket az almappákba (több kép = jobb felismerés)
+        4. Kattints az **"🔄 Adatbázis újraépítése"** gombra az oldalsávban
         
-        **Example structure:**
+        **Példa struktúra:**
         ```
-        data/people/
-        ├── John_Doe/
+        {data_manager.people_dir.name}/
+        ├── Kovacs_Janos/
         │   ├── photo1.jpg
         │   └── photo2.jpg
-        └── Jane_Smith/
+        └── Nagy_Anna/
             └── photo1.jpg
         ```
         """)
         
-        st.info(f"📁 Full path: `{config.PEOPLE_DIR.absolute()}`")
+        st.info(f"📁 Teljes útvonal: `{data_manager.people_dir.absolute()}`")
 
 
 def main() -> None:
     """Application entry point."""
     try:
         initialize_session_state()
-        data_manager, recognizer = initialize_face_recognition()
+        
+        # Check if user is authenticated
+        if not st.session_state.authenticated or not st.session_state.user:
+            auth_manager = get_auth_manager()
+            render_login_page(auth_manager)
+            return
+        
+        # User is authenticated - show main app
+        user_id = st.session_state.user['id']
+        
+        # Show loading message while initializing face recognition
+        with st.spinner('🔄 Arcfelismerő rendszer betöltése... (Ez az első alkalommal 30-60 másodpercet vehet igénybe)'):
+            data_manager, recognizer = initialize_face_recognition(user_id)
+        
         render_sidebar(data_manager)
         render_empty_database_warning(data_manager)
         render_main_content(recognizer, data_manager)
         
     except Exception as e:
-        st.error("### ❌ Critical error occurred!")
+        st.error("### ❌ Kritikus hiba történt!")
         st.exception(e)
         logger.critical("Critical error in main(): %s", str(e), exc_info=True)
 

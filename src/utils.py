@@ -49,19 +49,6 @@ def validate_image_path(image_path: Path) -> bool:
     return True
 
 
-def get_person_folders() -> list[Path]:
-    """Get all person folders from people directory."""
-    people_dir = config.PEOPLE_DIR
-    
-    if not people_dir.exists():
-        return []
-    
-    return [
-        folder for folder in people_dir.iterdir()
-        if folder.is_dir() and not folder.name.startswith(".")
-    ]
-
-
 def sanitize_person_name(folder_name: str) -> str:
     """Convert folder name to readable person name."""
     name = folder_name.replace("_", " ")
