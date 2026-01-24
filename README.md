@@ -162,10 +162,10 @@ git commit -m "Add multi-user authentication"
 git push
 ```
 
-### 2. Create PostgreSQL Database
+### 1. Create PostgreSQL Database
 Go to [Neon](https://neon.tech/) or [Supabase](https://supabase.com/) and create a free PostgreSQL database.
 
-### 3. Deploy on Streamlit Cloud
+### 2. Deploy on Streamlit Cloud
 1. Go to [share.streamlit.io](https://share.streamlit.io/)
 2. Connect your GitHub repository
 3. Select main file: `app.py`
@@ -174,7 +174,7 @@ Go to [Neon](https://neon.tech/) or [Supabase](https://supabase.com/) and create
 DATABASE_URL = "postgresql://user:password@host:port/database"
 ```
 
-### 4. Done! 🎉
+### 3. Done! 🎉
 Your app is now live and accessible to anyone with the URL.
 
 ---

@@ -65,7 +65,7 @@ class AuthManager:
             return False, "Felhasználónév maximum 50 karakter lehet"
         
         # Only alphanumeric and underscore
-        if not re.match(r'^[a-zA-Z0-9_]+$', username):
+        if not re.match(r'^\w+$', username):
             return False, "Csak betűk, számok és alulvonás használható"
         
         return True, ""
