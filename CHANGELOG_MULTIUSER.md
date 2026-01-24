@@ -102,98 +102,98 @@ data/
 
 ---
 
-## 🔐 Biztonság
+## 🔐 Security
 
-| Funkció | Megvalósítás |
+| Feature | Implementation |
 |---------|--------------|
-| Password tárolás | bcrypt hash (salt + iterations) |
-| Password validáció | Min 6, max 128 karakter |
-| SQL injection védelem | Parameterized queries |
-| User isolation | Külön mappastruktúra user_id alapján |
+| Password storage | bcrypt hash (salt + iterations) |
+| Password validation | Min 6, max 128 characters |
+| SQL injection protection | Parameterized queries |
+| User isolation | Separate folder structure per user_id |
 | Session hijacking | Streamlit built-in session management |
 
 ---
 
-## 📦 Deployment Opciók
+## 📦 Deployment Options
 
-### Lokális Fejlesztés
+### Local Development
 ```bash
-# Nincs DATABASE_URL → SQLite használata
+# No DATABASE_URL → uses SQLite
 streamlit run app.py
 ```
 
 ### Production (Streamlit Cloud)
 ```bash
-# Secrets beállítása:
+# Set secrets:
 DATABASE_URL = "postgresql://..."
 
-# Automatikus PostgreSQL használat
+# Automatically uses PostgreSQL
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### 1. Lokális Tesztelés
+### 1. Local Testing
 ```bash
 pip install bcrypt psycopg2-binary
 streamlit run app.py
 ```
 
-### 2. Regisztráció
-- Kattints "Regisztráció"
-- Adj meg username + password
-- Lépj be
+### 2. Registration
+- Click "Register"
+- Enter username + password
+- Log in
 
-### 3. Első Képek Feltöltése
-- Képek feltöltése: `data/users/user_1/people/Szemely_Neve/`
-- Kattints "🔄 Adatbázis újraépítése"
-- Tölts fel új képet és próbáld ki!
-
----
-
-## 🐛 Tesztelés Checklist
-
-- [x] ✅ Regisztráció működik
-- [x] ✅ Login/Logout működik
-- [x] ✅ User-specifikus adatok (user1 nem látja user2-t)
-- [x] ✅ Face recognition működik minden usernek
-- [x] ✅ Üres adatbázis esetén nem crashel
-- [x] ✅ EXIF orientáció javítás működik
-- [x] ✅ Többarc felismerés működik
-- [x] ✅ Confirmation system működik
-- [ ] ⏳ PostgreSQL deploy tesztelés (Streamlit Cloud)
+### 3. Upload First Images
+- Upload images to: `data/users/user_1/people/Person_Name/`
+- Click "🔄 Rebuild Database"
+- Upload new image and test recognition!
 
 ---
 
-## 📝 TODO (Opcionális Jövőbeli Fejlesztések)
+## 🐛 Testing Checklist
 
-### Fázis 2 (Later)
+- [x] ✅ Registration works
+- [x] ✅ Login/Logout works
+- [x] ✅ User-specific data (user1 doesn't see user2)
+- [x] ✅ Face recognition works for all users
+- [x] ✅ Doesn't crash with empty database
+- [x] ✅ EXIF orientation fix works
+- [x] ✅ Multi-face recognition works
+- [x] ✅ Confirmation system works
+- [ ] ⏳ PostgreSQL deployment testing (Streamlit Cloud)
+
+---
+
+## 📝 TODO (Optional Future Enhancements)
+
+### Phase 2 (Later)
 - [ ] Email verification
-- [ ] Password reset (email alapú)
+- [ ] Password reset (email-based)
 - [ ] Profile settings (change password, delete account)
 - [ ] Admin dashboard (user management, statistics)
 
-### Fázis 3 (Advanced)
-- [ ] Face clustering (auto-detect same person in multiple images)
+### Phase 3 (Advanced)
+- [ ] Face clustering (auto-detect same person across images)
 - [ ] Batch upload (multiple images at once)
 - [ ] Export/Import user data
 - [ ] API access (REST API for mobile apps)
 
 ---
 
-## 🎉 Összefoglalás
+## 🎉 Summary
 
-**Ami változott:**
+**What changed:**
 - ❌ **Single-user** app
 - ✅ **Multi-user** app with authentication
 
-**Ami megmaradt:**
-- ✅ Face recognition működés (semmit nem törött el)
-- ✅ EXIF, többarc, annotáció, confirmation
-- ✅ Magyar nyelv
+**What remained:**
+- ✅ Face recognition functionality (nothing broken)
+- ✅ EXIF, multi-face, annotation, confirmation
+- ✅ Hungarian language interface
 
-**Ami új:**
+**What's new:**
 - ✅ Login/Register UI
 - ✅ User-isolated databases
 - ✅ PostgreSQL support
@@ -202,5 +202,6 @@ streamlit run app.py
 ---
 
 **Author:** GitHub Copilot  
-**Date:** 2026. január 24.  
+**Date:** January 24, 2026  
 **Version:** 2.0 (Multi-User)
+
