@@ -181,3 +181,57 @@ class FaceRecognizer:
         results = list(zip(self.data_manager.known_face_names, face_distances))
         results.sort(key=lambda x: x[1])
         return results[:top_n]
+    
+    def recognize_all_faces(
+        self,
+        image: Union[str, Path, NDArray[np.uint8], Image.Image]
+    ) -> list[tuple[str, tuple[int, int, int, int]]]:
+        """
+        Recognize all faces in an image.
+        
+        Returns:
+            List of tuples: (name, face_location)
+            face_location is (top, right, bottom, left)
+        """
+        image_array = self._load_and_normalize_image(image)
+        
+        if image_array is None:
+            self.logger.warning("Failed to load image")
+            return []
+        
+        if not self.data_manager.known_face_encodings:
+            self.logger.warning("Database is empty!")
+            return []
+        
+        self.logger.debug("Detecting all faces...")
+        face_locations = face_recognition.face_locations(
+            image_array,
+            model=config.FACE_DETECTION_MODEL
+        )
+        
+        if not face_locations:
+            self.logger.info("No faces found in image")
+            return []
+        
+        self.logger.info("Found %d face(s) in image", len(face_locations))
+        
+        self.logger.debug("Generating encodings for all faces...")
+        face_encodings = face_recognition.face_encodings(
+            image_array,
+            known_face_locations=face_locations,
+            model=config.ENCODING_MODEL
+        )
+        
+        if not face_encodings:
+            self.logger.warning("Failed to generate encodings")
+            return []
+        
+        # Match each face
+        results = []
+        for face_encoding, face_location in zip(face_encodings, face_locations):
+            recognized_name = self._match_face(face_encoding)
+            name = recognized_name if recognized_name else "Ismeretlen"
+            results.append((name, face_location))
+            self.logger.debug("Face at %s: %s", face_location, name)
+        
+        return results

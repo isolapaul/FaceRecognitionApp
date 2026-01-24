@@ -178,3 +178,58 @@ class FaceDataManager:
         self.known_face_encodings.clear()
         self.known_face_names.clear()
         self.logger.info("Database cleared from memory")
+    
+    def add_single_image_encoding(
+        self,
+        image_path: Path,
+        person_name: str
+    ) -> bool:
+        """
+        Add encoding from a single image to the database.
+        
+        Args:
+            image_path: Path to the image file
+            person_name: Name of the person in the image
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            self.logger.info("Adding encoding from %s for %s", image_path.name, person_name)
+            
+            image = face_recognition.load_image_file(str(image_path))
+            
+            face_locations = face_recognition.face_locations(
+                image,
+                model=config.FACE_DETECTION_MODEL
+            )
+            
+            if not face_locations:
+                self.logger.warning("No face found in %s", image_path.name)
+                return False
+            
+            face_encodings = face_recognition.face_encodings(
+                image,
+                known_face_locations=face_locations,
+                model=config.ENCODING_MODEL
+            )
+            
+            if not face_encodings:
+                self.logger.warning("Failed to generate encoding for %s", image_path.name)
+                return False
+            
+            # Add all encodings found in the image
+            for encoding in face_encodings:
+                self.known_face_encodings.append(encoding)
+                self.known_face_names.append(person_name)
+            
+            self.logger.info("Added %d encoding(s) for %s", len(face_encodings), person_name)
+            
+            # Save to cache
+            self.save_encodings_to_cache()
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error("Error adding encoding: %s", str(e))
+            return False

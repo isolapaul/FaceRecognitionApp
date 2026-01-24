@@ -1,5 +1,7 @@
 """Face Recognition Streamlit Application."""
 import logging
+from datetime import datetime
+from pathlib import Path
 
 import streamlit as st
 from PIL import Image
@@ -7,7 +9,7 @@ from PIL import Image
 import config
 from src.data_manager import FaceDataManager
 from src.face_engine import FaceRecognizer
-from src.utils import setup_logging
+from src.utils import setup_logging, fix_image_orientation, draw_face_annotations
 
 
 st.set_page_config(
@@ -25,6 +27,18 @@ def get_logger() -> logging.Logger:
 
 
 logger = get_logger()
+
+
+def initialize_session_state() -> None:
+    """Initialize session state variables."""
+    if "awaiting_confirmation" not in st.session_state:
+        st.session_state.awaiting_confirmation = False
+    if "recognized_faces" not in st.session_state:
+        st.session_state.recognized_faces = []
+    if "current_image" not in st.session_state:
+        st.session_state.current_image = None
+    if "current_filename" not in st.session_state:
+        st.session_state.current_filename = None
 
 
 @st.cache_resource
@@ -84,7 +98,60 @@ def render_sidebar(data_manager: FaceDataManager) -> None:
     )
 
 
-def render_main_content(recognizer: FaceRecognizer) -> None:
+def save_new_image_and_retrain(
+    data_manager: FaceDataManager,
+    image: Image.Image,
+    recognized_faces: list[tuple[str, tuple[int, int, int, int]]],
+    original_filename: str
+) -> bool:
+    """
+    Save image to person folders and add encodings to database.
+    
+    Args:
+        data_manager: FaceDataManager instance
+        image: PIL Image to save
+        recognized_faces: List of (name, location) tuples
+        original_filename: Original filename for reference
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        success_count = 0
+        
+        for idx, (person_name, _) in enumerate(recognized_faces):
+            # Skip unknown faces
+            if person_name == "Ismeretlen":
+                continue
+            
+            # Create person folder if it doesn't exist
+            person_folder = config.PEOPLE_DIR / person_name.replace(" ", "_")
+            person_folder.mkdir(parents=True, exist_ok=True)
+            
+            # Generate unique filename
+            filename = f"confirmed_{timestamp}_{idx}.jpg"
+            save_path = person_folder / filename
+            
+            # Save image
+            image.save(save_path, "JPEG")
+            logger.info("Saved image to %s", save_path)
+            
+            # Add encoding to database
+            if data_manager.add_single_image_encoding(save_path, person_name):
+                success_count += 1
+                logger.info("Added encoding for %s", person_name)
+            else:
+                logger.warning("Failed to add encoding for %s", person_name)
+        
+        return success_count > 0
+        
+    except Exception as e:
+        logger.error("Error saving image and retraining: %s", str(e))
+        return False
+
+
+def render_main_content(recognizer: FaceRecognizer, data_manager: FaceDataManager) -> None:
     """Render main content (image upload, recognition)."""
     st.title(config.APP_TITLE)
     st.markdown("---")
@@ -93,9 +160,10 @@ def render_main_content(recognizer: FaceRecognizer) -> None:
         st.markdown("""
         ### Usage
         1. **Upload an image** using the uploader below
-        2. The app will **automatically detect the face**
-        3. **Compare** with local database
-        4. **Show the result** (name or "Unknown")
+        2. Click **"Ki van a képen?"** button
+        3. The app will **detect all faces** in the image
+        4. **Compare** with local database
+        5. **Confirm** if the recognition is correct
         
         ### Privacy
         - ✅ 100% local, no cloud
@@ -115,12 +183,28 @@ def render_main_content(recognizer: FaceRecognizer) -> None:
     )
     
     if uploaded_file is not None:
+        # Load and fix image orientation
+        image = Image.open(uploaded_file)
+        image = fix_image_orientation(image)
+        
         col1, col2 = st.columns([1, 1])
         
         with col1:
             st.subheader("🖼️ Uploaded Image")
-            image = Image.open(uploaded_file)
-            st.image(image, use_column_width=True)
+            
+            # Show annotated image if we have recognized faces
+            if (st.session_state.current_image is not None and 
+                st.session_state.recognized_faces and 
+                st.session_state.current_filename == uploaded_file.name):
+                
+                annotated_image = draw_face_annotations(
+                    st.session_state.current_image,
+                    st.session_state.recognized_faces
+                )
+                st.image(annotated_image, use_column_width=True)
+            else:
+                st.image(image, use_column_width=True)
+            
             st.caption(
                 f"File: {uploaded_file.name} | "
                 f"Size: {image.size[0]}x{image.size[1]} px"
@@ -129,33 +213,102 @@ def render_main_content(recognizer: FaceRecognizer) -> None:
         with col2:
             st.subheader("🔍 Result")
             
-            if st.button("🚀 Recognize Face", type="primary", use_container_width=True):
-                with st.spinner("Recognizing face..."):
-                    recognized_name = recognizer.recognize_face(image)
+            # Recognition button
+            if st.button("🚀 Ki van a képen?", type="primary", use_container_width=True):
+                with st.spinner("Arcok felismerése..."):
+                    recognized_faces = recognizer.recognize_all_faces(image)
                     
-                    if recognized_name:
-                        st.success(f"### ✅ Recognized: **{recognized_name}**")
-                        logger.info("Successful recognition: %s (file: %s)", recognized_name, uploaded_file.name)
-                    else:
-                        st.warning("### ❓ Unknown Face")
-                        st.info("Face not found in database or no face detected in image.")
-                        logger.info("Unknown face (file: %s)", uploaded_file.name)
-                    
-                    with st.expander("📊 Detailed Analysis", expanded=False):
-                        detailed_results = recognizer.get_detailed_match_results(image, top_n=5)
+                    if not recognized_faces:
+                        st.warning("### ❓ Nem találtam arcot a képen")
+                        st.info("Próbálj jobb minőségű képet feltölteni.")
+                        logger.info("No faces found (file: %s)", uploaded_file.name)
                         
-                        if detailed_results:
-                            st.markdown("**Top 5 matches:**")
+                        # Clear session state
+                        st.session_state.recognized_faces = []
+                        st.session_state.current_image = None
+                        st.session_state.awaiting_confirmation = False
+                    else:
+                        # Store in session state
+                        st.session_state.recognized_faces = recognized_faces
+                        st.session_state.current_image = image
+                        st.session_state.current_filename = uploaded_file.name
+                        st.session_state.awaiting_confirmation = True
+                        
+                        # Count known vs unknown
+                        known_faces = [name for name, _ in recognized_faces if name != "Ismeretlen"]
+                        unknown_count = len([name for name, _ in recognized_faces if name == "Ismeretlen"])
+                        
+                        if known_faces:
+                            st.success(f"### ✅ Felismertem: **{', '.join(known_faces)}**")
+                            logger.info("Recognized: %s (file: %s)", ', '.join(known_faces), uploaded_file.name)
                             
-                            for idx, (name, distance) in enumerate(detailed_results, start=1):
-                                confidence = max(0, 100 - (distance * 100))
-                                st.metric(
-                                    label=f"{idx}. {name}",
-                                    value=f"{confidence:.1f}%",
-                                    delta=f"Distance: {distance:.3f}"
-                                )
+                            if unknown_count > 0:
+                                st.warning(f"⚠️ Emellett {unknown_count} ismeretlen arcot is találtam")
                         else:
-                            st.warning("Could not analyze image")
+                            st.warning(f"### ❓ {len(recognized_faces)} ismeretlen arc")
+                            st.info("Ezek az arcok nincsenek az adatbázisban.")
+                        
+                        st.rerun()
+            
+            # Confirmation dialog
+            if st.session_state.awaiting_confirmation and st.session_state.recognized_faces:
+                known_faces = [name for name, _ in st.session_state.recognized_faces if name != "Ismeretlen"]
+                
+                if known_faces:
+                    st.markdown("---")
+                    if len(known_faces) == 1:
+                        st.info(f"💬 Valóban **{known_faces[0]}** van a képen?")
+                    else:
+                        st.info(f"💬 Valóban **{', '.join(known_faces)}** vannak a képen?")
+                    
+                    col_yes, col_no = st.columns(2)
+                    
+                    with col_yes:
+                        if st.button("✅ Igen", use_container_width=True, type="primary"):
+                            if st.session_state.current_image is None or st.session_state.current_filename is None:
+                                st.error("❌ Hiba: nincs betöltött kép")
+                            else:
+                                with st.spinner("Képek mentése és tanulás..."):
+                                    if save_new_image_and_retrain(
+                                        data_manager,
+                                        st.session_state.current_image,
+                                        st.session_state.recognized_faces,
+                                        st.session_state.current_filename
+                                    ):
+                                        st.success("✅ Kép elmentve és adatbázis frissítve!")
+                                        st.balloons()
+                                        logger.info("Image saved and database updated")
+                                        
+                                        # Clear session state
+                                        st.session_state.awaiting_confirmation = False
+                                        st.session_state.recognized_faces = []
+                                        st.session_state.current_image = None
+                                        st.session_state.current_filename = None
+                                        
+                                        st.rerun()
+                                    else:
+                                        st.error("❌ Hiba történt a mentés során")
+                    
+                    with col_no:
+                        if st.button("❌ Nem", use_container_width=True):
+                            st.error("### 🤬 Szopdki ocskos, tudom hogy jól számoltam!")
+                            st.balloons()
+                            logger.info("User rejected recognition")
+                            
+                            # Clear session state
+                            st.session_state.awaiting_confirmation = False
+                            st.session_state.recognized_faces = []
+                            st.session_state.current_image = None
+                            st.session_state.current_filename = None
+            
+            # Detailed analysis expander
+            if st.session_state.recognized_faces:
+                with st.expander("📊 Részletes Elemzés", expanded=False):
+                    st.markdown("**Talált arcok:**")
+                    for idx, (name, location) in enumerate(st.session_state.recognized_faces, start=1):
+                        top, right, bottom, left = location
+                        st.markdown(f"{idx}. **{name}** (pozíció: {left}, {top} - {right}, {bottom})")
+
 
 
 def render_empty_database_warning(data_manager: FaceDataManager) -> None:
@@ -189,10 +342,11 @@ def render_empty_database_warning(data_manager: FaceDataManager) -> None:
 def main() -> None:
     """Application entry point."""
     try:
+        initialize_session_state()
         data_manager, recognizer = initialize_face_recognition()
         render_sidebar(data_manager)
         render_empty_database_warning(data_manager)
-        render_main_content(recognizer)
+        render_main_content(recognizer, data_manager)
         
     except Exception as e:
         st.error("### ❌ Critical error occurred!")
