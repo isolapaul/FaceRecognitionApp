@@ -12,7 +12,6 @@ from src.utils import setup_logging, fix_image_orientation, draw_face_annotation
 from src.database import DatabaseManager
 from src.auth import AuthManager
 
-# Lazy imports to avoid loading face_recognition before it's needed
 if TYPE_CHECKING:
     from src.data_manager import FaceDataManager
     from src.face_engine import FaceRecognizer
@@ -59,7 +58,7 @@ def initialize_session_state() -> None:
 @st.cache_resource
 def initialize_face_recognition(user_id: int) -> tuple:
     """Initialize face recognition components for specific user."""
-    # Import here to avoid loading face_recognition before login
+    
     from src.data_manager import FaceDataManager
     from src.face_engine import FaceRecognizer
     
@@ -93,7 +92,7 @@ def get_auth_manager() -> AuthManager:
 
 def render_login_page(auth_manager: AuthManager) -> None:
     """Render login/register page."""
-    st.title("🎭 Face Recognition App")
+    st.title("Face Recognition App")
     st.markdown("---")
     
     # Toggle between login and register
@@ -101,7 +100,7 @@ def render_login_page(auth_manager: AuthManager) -> None:
     
     with col2:
         if st.session_state.show_register:
-            st.subheader("📝 Regisztráció")
+            st.subheader("Regisztráció")
             
             with st.form("register_form"):
                 username = st.text_input("Felhasználónév", max_chars=50)
@@ -118,18 +117,18 @@ def render_login_page(auth_manager: AuthManager) -> None:
                 
                 if submit:
                     if not username or not password:
-                        st.error("❌ Töltsd ki az összes mezőt!")
+                        st.error("Töltsd ki az összes mezőt!")
                     elif password != password_confirm:
-                        st.error("❌ A jelszavak nem egyeznek!")
+                        st.error("A jelszavak nem egyeznek!")
                     else:
                         success, message = auth_manager.register(username, password)
                         if success:
-                            st.success(f"✅ {message}")
+                            st.success(f"{message}")
                             st.info("Most már beléphetsz az új fiókodba!")
                             st.session_state.show_register = False
                             st.rerun()
                         else:
-                            st.error(f"❌ {message}")
+                            st.error(f"{message}")
                 
                 if back:
                     st.session_state.show_register = False
@@ -152,16 +151,16 @@ def render_login_page(auth_manager: AuthManager) -> None:
                 
                 if submit:
                     if not username or not password:
-                        st.error("❌ Töltsd ki az összes mezőt!")
+                        st.error("Töltsd ki az összes mezőt!")
                     else:
                         success, user, message = auth_manager.login(username, password)
                         if success and user:
                             st.session_state.authenticated = True
                             st.session_state.user = user
-                            st.success(f"✅ {message}")
+                            st.success(f"{message}")
                             st.rerun()
                         else:
-                            st.error(f"❌ {message}")
+                            st.error(f"{message}")
                 
                 if register_btn:
                     st.session_state.show_register = True
@@ -169,15 +168,15 @@ def render_login_page(auth_manager: AuthManager) -> None:
     
     # Info box
     st.markdown("---")
-    with st.expander("ℹ️ Információ", expanded=False):
+    with st.expander("Információ", expanded=False):
         st.markdown("""
-        ### Üdvözlünk! 👋
+        ### Szia!
         
         Ez egy **arcfelismerő alkalmazás**, ahol:
-        - ✅ Feltölthetsz képeket ismerősökről
-        - ✅ Az app megtanulja felismerni őket
-        - ✅ Később automatikusan megnevezi ki van a képen
-        - ✅ Minden felhasználó saját adatbázist használ
+        - Feltölthetsz képeket barátokról/ismerősökről
+        - Az app megtanulja felismerni őket
+        - Utána automatikusan megnevezi ki van a képen
+        - Minden felhasználó saját adatbázist használ
         
         **Kezdéshez:**
         1. Regisztrálj egy új fiókot
@@ -199,45 +198,45 @@ def render_sidebar(data_manager) -> None:
             st.session_state.recognized_faces = []
             st.session_state.current_image = None
             st.session_state.current_filename = None
-            st.cache_resource.clear()  # Clear cached resources
+            st.cache_resource.clear() 
             st.rerun()
         
         st.sidebar.markdown("---")
     
-    st.sidebar.title("⚙️ Beállítások")
-    st.sidebar.subheader("📊 Adatbázis")
+    st.sidebar.title("Beállítások")
+    st.sidebar.subheader("Adatbázis")
     db_info = data_manager.get_database_info()
     
     st.sidebar.metric(label="Összes arc", value=db_info["total_faces"])
     st.sidebar.metric(label="Egyedi személyek", value=db_info["unique_persons"])
     
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🔄 Műveletek")
+    st.sidebar.subheader("Műveletek")
     
-    if st.sidebar.button("🔄 Adatbázis újraépítése", use_container_width=True):
+    if st.sidebar.button("Adatbázis újraépítése", use_container_width=True):
         with st.spinner("Adatbázis újraépítése..."):
             data_manager.clear_database()
             faces_count = data_manager.build_database_from_images(force_rebuild=True)
             
             if faces_count > 0:
-                st.sidebar.success(f"✅ {faces_count} arc betanítva!")
+                st.sidebar.success(f"{faces_count} arc betanítva!")
                 logger.info("Database rebuilt: %d faces", faces_count)
                 st.rerun()
             else:
-                st.sidebar.info("ℹ️ Még nincsenek képek az adatbázisban")
+                st.sidebar.info("Még nincsenek képek az adatbázisban")
     
     if st.sidebar.button("🗑️ Cache törlése", use_container_width=True):
         cache_file = data_manager.encodings_file
         if cache_file.exists():
             cache_file.unlink()
-            st.sidebar.success("✅ Cache törölve!")
+            st.sidebar.success("Cache törölve!")
             logger.info("Cache file deleted")
         else:
-            st.sidebar.info("ℹ️ Nincs cache fájl")
+            st.sidebar.info("Nincs cache fájl")
     
     st.sidebar.markdown("---")
     st.sidebar.info(
-        f"💡 **Tipp**: Képeket a `{data_manager.people_dir}` mappába tedd, "
+        f"**Tipp**: Képeket a `{data_manager.people_dir}` mappába tedd, "
         "minden személynek külön almappa!"
     )
 
@@ -265,23 +264,18 @@ def save_new_image_and_retrain(
         success_count = 0
         
         for idx, (person_name, _) in enumerate(recognized_faces):
-            # Skip unknown faces
             if person_name == "Ismeretlen":
                 continue
             
-            # Create person folder if it doesn't exist (use data_manager's people_dir)
             person_folder = data_manager.people_dir / person_name.replace(" ", "_")
             person_folder.mkdir(parents=True, exist_ok=True)
             
-            # Generate unique filename
             filename = f"confirmed_{timestamp}_{idx}.jpg"
             save_path = person_folder / filename
             
-            # Save image
             image.save(save_path, "JPEG")
             logger.info("Saved image to %s", save_path)
             
-            # Add encoding to database
             if data_manager.add_single_image_encoding(save_path, person_name):
                 success_count += 1
                 logger.info("Added encoding for %s", person_name)
@@ -304,22 +298,21 @@ def render_main_content(recognizer, data_manager) -> None:
         st.markdown("""
         ### Usage
         1. **Upload an image** using the uploader below
-        2. Click **"Ki van a képen?"** button
+        2. Click the button
         3. The app will **detect all faces** in the image
         4. **Compare** with local database
         5. **Confirm** if the recognition is correct
         
         ### Privacy
-        - ✅ 100% local, no cloud
-        - ✅ Images stored in `data/people/` folder
-        - ✅ GDPR compliant (with consent)
+        - 100% local, no cloud
+        - Images stored in `data/people/` folder
         
         ### Supported formats
         - JPG, JPEG, PNG, BMP, GIF
         """)
     
     st.markdown("---")
-    st.subheader("📤 Upload Image")
+    st.subheader("Upload Image")
     uploaded_file = st.file_uploader(
         label="Choose an image",
         type=["jpg", "jpeg", "png", "bmp", "gif"],
@@ -327,16 +320,14 @@ def render_main_content(recognizer, data_manager) -> None:
     )
     
     if uploaded_file is not None:
-        # Load and fix image orientation
         image = Image.open(uploaded_file)
         image = fix_image_orientation(image)
         
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.subheader("🖼️ Uploaded Image")
+            st.subheader("Uploaded Image")
             
-            # Show annotated image if we have recognized faces
             if (st.session_state.current_image is not None and 
                 st.session_state.recognized_faces and 
                 st.session_state.current_filename == uploaded_file.name):
@@ -355,15 +346,14 @@ def render_main_content(recognizer, data_manager) -> None:
             )
         
         with col2:
-            st.subheader("🔍 Result")
+            st.subheader("Result")
             
-            # Recognition button
-            if st.button("🚀 Ki van a képen?", type="primary", use_container_width=True):
+            if st.button("Ki van a képen?", type="primary", use_container_width=True):
                 with st.spinner("Arcok felismerése..."):
                     recognized_faces = recognizer.recognize_all_faces(image)
                     
                     if not recognized_faces:
-                        st.warning("### ❓ Nem találtam arcot a képen")
+                        st.warning("### Nem találtam arcot a képen")
                         st.info("Próbálj jobb minőségű képet feltölteni.")
                         logger.info("No faces found (file: %s)", uploaded_file.name)
                         
@@ -383,11 +373,11 @@ def render_main_content(recognizer, data_manager) -> None:
                         unknown_count = len([name for name, _ in recognized_faces if name == "Ismeretlen"])
                         
                         if known_faces:
-                            st.success(f"### ✅ Felismertem: **{', '.join(known_faces)}**")
+                            st.success(f"### Felismertem: **{', '.join(known_faces)}**")
                             logger.info("Recognized: %s (file: %s)", ', '.join(known_faces), uploaded_file.name)
                             
                             if unknown_count > 0:
-                                st.warning(f"⚠️ Emellett {unknown_count} ismeretlen arcot is találtam")
+                                st.warning(f"Emellett {unknown_count} ismeretlen arcot is találtam")
                         else:
                             st.warning(f"### ❓ {len(recognized_faces)} ismeretlen arc")
                             st.info("Ezek az arcok nincsenek az adatbázisban.")
@@ -401,16 +391,16 @@ def render_main_content(recognizer, data_manager) -> None:
                 if known_faces:
                     st.markdown("---")
                     if len(known_faces) == 1:
-                        st.info(f"💬 Valóban **{known_faces[0]}** van a képen?")
+                        st.info(f"Valóban **{known_faces[0]}** van a képen?")
                     else:
-                        st.info(f"💬 Valóban **{', '.join(known_faces)}** vannak a képen?")
+                        st.info(f"Valóban **{', '.join(known_faces)}** vannak a képen?")
                     
                     col_yes, col_no = st.columns(2)
                     
                     with col_yes:
-                        if st.button("✅ Igen", use_container_width=True, type="primary"):
+                        if st.button("Igen", use_container_width=True, type="primary"):
                             if st.session_state.current_image is None or st.session_state.current_filename is None:
-                                st.error("❌ Hiba: nincs betöltött kép")
+                                st.error("Hiba: nincs betöltött kép")
                             else:
                                 with st.spinner("Képek mentése és tanulás..."):
                                     if save_new_image_and_retrain(
@@ -419,7 +409,7 @@ def render_main_content(recognizer, data_manager) -> None:
                                         st.session_state.recognized_faces,
                                         st.session_state.current_filename
                                     ):
-                                        st.success("✅ Kép elmentve és adatbázis frissítve!")
+                                        st.success("Kép elmentve és adatbázis frissítve!")
                                         st.balloons()
                                         logger.info("Image saved and database updated")
                                         
@@ -431,11 +421,11 @@ def render_main_content(recognizer, data_manager) -> None:
                                         
                                         st.rerun()
                                     else:
-                                        st.error("❌ Hiba történt a mentés során")
+                                        st.error("Hiba történt a mentés során")
                     
                     with col_no:
-                        if st.button("❌ Nem", use_container_width=True):
-                            st.error("### 🤬 Szopdki ocskos, tudom hogy jól számoltam!")
+                        if st.button("Nem", use_container_width=True):
+                            st.error("### xd, nincs igazad")
                             st.balloons()
                             logger.info("User rejected recognition")
                             
@@ -447,7 +437,7 @@ def render_main_content(recognizer, data_manager) -> None:
             
             # Detailed analysis expander
             if st.session_state.recognized_faces:
-                with st.expander("📊 Részletes Elemzés", expanded=False):
+                with st.expander("Részletes Elemzés", expanded=False):
                     st.markdown("**Talált arcok:**")
                     for idx, (name, location) in enumerate(st.session_state.recognized_faces, start=1):
                         top, right, bottom, left = location
@@ -460,14 +450,14 @@ def render_empty_database_warning(data_manager) -> None:
     db_info = data_manager.get_database_info()
     
     if db_info["total_faces"] == 0:
-        st.info("### ℹ️ Az adatbázis még üres")
+        st.info("### Az adatbázis még üres")
         st.markdown(f"""
         **Lépések az adatbázis feltöltéséhez:**
         
         1. Nyisd meg a projekt mappát: `{data_manager.people_dir}`
         2. Hozz létre almappákat minden személyhez (pl. `Kovacs_Janos`)
         3. Tedd a képeket az almappákba (több kép = jobb felismerés)
-        4. Kattints az **"🔄 Adatbázis újraépítése"** gombra az oldalsávban
+        4. Kattints az **"Adatbázis újraépítése"** gombra az oldalsávban
         
         **Példa struktúra:**
         ```
@@ -480,7 +470,7 @@ def render_empty_database_warning(data_manager) -> None:
         ```
         """)
         
-        st.info(f"📁 Teljes útvonal: `{data_manager.people_dir.absolute()}`")
+        st.info(f"Teljes útvonal: `{data_manager.people_dir.absolute()}`")
 
 
 def main() -> None:
@@ -498,7 +488,7 @@ def main() -> None:
         user_id = st.session_state.user['id']
         
         # Show loading message while initializing face recognition
-        with st.spinner('🔄 Arcfelismerő rendszer betöltése... (Ez az első alkalommal 30-60 másodpercet vehet igénybe)'):
+        with st.spinner('Arcfelismerő rendszer betöltése... (Ez az első alkalommal 30-60 másodpercet vehet igénybe)'):
             data_manager, recognizer = initialize_face_recognition(user_id)
         
         render_sidebar(data_manager)
@@ -506,7 +496,7 @@ def main() -> None:
         render_main_content(recognizer, data_manager)
         
     except Exception as e:
-        st.error("### ❌ Kritikus hiba történt!")
+        st.error("### Kritikus hiba történt!")
         st.exception(e)
         logger.critical("Critical error in main(): %s", str(e), exc_info=True)
 
