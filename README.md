@@ -1,4 +1,4 @@
-# 🎭 Face Recognition App
+# Face Recognition App
 
 ## Description
 Multi-user face recognition application built with Python, Streamlit, and PostgreSQL.
